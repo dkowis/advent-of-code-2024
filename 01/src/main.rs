@@ -66,9 +66,14 @@ mod test {
         .trim();
 
         let actual_input = input.split("\n")
-            .map(|x| x.split(" "))
-            .map(|x| x.parse::<i32>().unwrap())
-            .collect();
+            .map(|x| {
+                let split = x.split(" ");
+                (split[0], split[1])
+            })
+            .map(|(one, two)| {
+                (one.parse::<usize>().unwrap(), two.parse::<usize>().unwrap())
+            })
+            .collect::<Vec<(usize, usize)>>();
 
         Ok(())
     }
