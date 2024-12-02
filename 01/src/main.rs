@@ -1,3 +1,4 @@
+use regex::Regex;
 pub use shared::prelude::*;
 
 fn main() -> Result<(), DayError> {
@@ -11,27 +12,64 @@ fn main() -> Result<(), DayError> {
 
     println!("Test some input parsing lol");
 
-    let result = load_input(0, 1, parse_word)?;
-    for x in result {
-        println!("A LINE: {}", x);
-        let _ = part1();
-    }
+    let part1_input = load_input(1, 1, parse_word)?;
 
-    let result2 = load_input(0, 2, parse_i32)?;
-    for x in result2 {
-        println!("ITS A NUMBER: {}", x);
-        let _ = part2();
-    }
+    let part1_result = part1(&part1_input)?;
+    println!("Part 1: {}", part1_result);
+
+
+    // let result2 = load_input(1, 2, parse_i32)?;
+    // for x in result2 {
+    //     println!("ITS A NUMBER: {}", x);
+    //     let _ = part2();
+    // }
 
     Ok(())
 }
 
-fn part1() -> Result<(), DayError> {
-    todo!();
+fn part1(input: &Vec<String>) -> Result<usize, DayError> {
+    let (mut vec1, mut vec2) = parse_input_string(input)?;
+    vec1.sort();
+    vec2.sort();
+
+    let mut result = 0;
+    for i in 0..vec1.len() {
+        let first = vec1[i];
+        let second = vec2[i];
+        debug!("PAIR: {} {}", first, second);
+        let diff = (first - second).abs() as usize;
+        result += diff;
+    }
+
+    Ok(result)
 }
 
 fn part2() -> Result<(), DayError> {
     todo!();
+}
+
+fn parse_input_string(input: &Vec<String>) -> Result<(Vec<isize>, Vec<isize>), DayError> {
+    let re = Regex::new(r"(\d+)\s+(\d+)").unwrap();
+
+    let actual_input = input
+        .iter()
+        .map(|x| {
+            if let Some(captures) = re.captures(x) {
+                let first: isize = captures[1].parse().unwrap();
+                let second: isize = captures[2].parse().unwrap();
+                return (first, second);
+            } else {
+                panic!("No captures");
+            }
+        })
+        .collect::<Vec<(isize, isize)>>();
+    let mut vec1 = Vec::with_capacity(actual_input.len());
+    let mut vec2 = Vec::with_capacity(actual_input.len());
+    for x in actual_input {
+        vec1.push(x.0);
+        vec2.push(x.1);
+    }
+    Ok((vec1, vec2))
 }
 
 #[cfg(test)]
@@ -40,6 +78,7 @@ mod test {
     use pretty_assertions::{assert_eq, assert_ne};
     use shared::prelude::*;
     use std::sync::Once;
+    use crate::{parse_input_string, part1};
 
     static INIT: Once = Once::new();
 
@@ -65,15 +104,9 @@ mod test {
         "#
         .trim();
 
-        let actual_input = input.split("\n")
-            .map(|x| {
-                let split = x.split(" ");
-                (split[0], split[1])
-            })
-            .map(|(one, two)| {
-                (one.parse::<usize>().unwrap(), two.parse::<usize>().unwrap())
-            })
-            .collect::<Vec<(usize, usize)>>();
+        let parsed:Vec<String> = input.split("\n").map(|x| x.to_string()).collect::<Vec<String>>();
+        let result = part1(&parsed)?;
+        assert_eq!(result, 11);
 
         Ok(())
     }
