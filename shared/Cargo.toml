@@ -1,0 +1,11 @@
+[package]
+name = "shared"
+version = "0.1.0"
+authors = ["David Kowis <david@kow.is>"]
+edition  = "2021"
+
+[dependencies]
+thiserror = "1.0.50"
+log = "0.4.20"
+flexi_logger = "0.27.3"
+indoc = "2.0.4"
