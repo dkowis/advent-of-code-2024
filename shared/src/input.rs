@@ -44,7 +44,8 @@ pub fn parse_isize(s: String) -> Result<isize, Error> {
 }
 
 pub fn parse_usize(s: String) -> Result<usize, Error> {
-    s.parse::<usize>().map_err(|e| Error::new(ErrorKind::InvalidData, e))
+    s.parse::<usize>()
+        .map_err(|e| Error::new(ErrorKind::InvalidData, e))
 }
 
 pub fn parse_string(s: String) -> Result<String, ParseError> {
