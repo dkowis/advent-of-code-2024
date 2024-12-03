@@ -118,7 +118,7 @@ fn part2(input: &[String]) -> Result<isize, DayError> {
 mod test {
     extern crate indoc;
     use crate::{part1, part2};
-    use pretty_assertions::{assert_eq, assert_ne};
+    use pretty_assertions::assert_eq;
     use shared::prelude::*;
     use std::sync::Once;
 
