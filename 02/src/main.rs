@@ -1,4 +1,5 @@
 pub use shared::prelude::*;
+use std::fmt::Debug;
 
 fn main() -> Result<(), DayError> {
     Logger::try_with_env_or_str("warn")?.start()?;
@@ -18,17 +19,19 @@ fn main() -> Result<(), DayError> {
         .collect();
     let part1_result = part1(&matrix)?;
     println!("Part 1: {}", part1_result);
-    assert_eq!(part1_result, 472);
+
+    let part2_result = part2(&matrix)?;
+    println!("Part 2: {}", part2_result);
 
     Ok(())
 }
 
-fn part1(matrix: &Vec<Vec<usize>>) -> Result<usize, DayError> {
+fn part1(matrix: &[Vec<usize>]) -> Result<usize, DayError> {
     let transformed = transform_reports(matrix);
     debug!("transformed: {:#?}", transformed);
     //if any of the changes in levels is more than 3 it's a fail
 
-    let count = transformed.iter().filter(|report| report.is_safe() ).count();
+    let count = transformed.iter().filter(|report| report.is_safe()).count();
 
     Ok(count)
 }
@@ -36,30 +39,87 @@ fn part1(matrix: &Vec<Vec<usize>>) -> Result<usize, DayError> {
 #[derive(Debug)]
 struct Report {
     row: Vec<usize>,
-    transformed: Vec<isize>,
+    levels: Vec<Level>,
+}
+
+struct Level {
+    start: usize,
+    end: usize,
+    diff: isize,
+}
+impl Debug for Level {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "Level {{ start: {}, end: {}, diff: {}, is_decreasing: {}, is_increasing: {} }}",
+            self.start,
+            self.end,
+            self.diff,
+            self.is_decreasing(),
+            self.is_increasing()
+        )
+    }
+}
+impl Level {
+    fn new(start: usize, end: usize) -> Level {
+        let diff = start as isize - end as isize;
+        Level { start, end, diff }
+    }
+
+    fn is_safe(&self) -> bool {
+        let abs = self.diff.abs();
+        abs > 0 && abs <= 3
+    }
+
+    fn is_increasing(&self) -> bool {
+        self.diff > 0
+    }
+
+    fn is_decreasing(&self) -> bool {
+        self.diff < 0
+    }
 }
 
 impl Report {
-    fn transform_report(row: &Vec<usize>) -> Vec<isize> {
-        let mut result_vec: Vec<isize> = Vec::with_capacity(row.len() - 1);
+    fn transform_report(row: &[usize]) -> Vec<Level> {
+        let mut result_vec: Vec<Level> = Vec::with_capacity(row.len() - 1);
         debug!("result_vec: {:#?}", result_vec);
         for i in 0..row.len() - 1 {
-            result_vec.push(row[i] as isize - row[i + 1] as isize);
+            result_vec.push(Level::new(row[i], row[i + 1]));
         }
         result_vec
     }
     pub fn new(row: Vec<usize>) -> Report {
-        let transformed = Report::transform_report(&row);
-        Report { row, transformed }
+        let levels = Report::transform_report(&row);
+        Report { row, levels }
     }
     pub fn is_safe(&self) -> bool {
-        self.transformed.iter().all(|x| x.abs() > 0 && x.abs() <= 3)
-            && (self.transformed.iter().all(|x| x.is_negative())
-                || self.transformed.iter().all(|x| x.is_positive()))
+        self.levels.iter().all(|x| x.is_safe())
+            && (self.levels.iter().all(|x| x.is_increasing())
+                || self.levels.iter().all(|x| x.is_decreasing()))
+    }
+    pub fn dampened(&self) -> Option<Report> {
+        if self.is_safe() {
+            panic!("This report is already safe");
+        } else {
+            //Create a new report from this one, that has been dampened, and that is safe.
+            //Or none, because nothing could fix it
+            for i in 0..self.row.len() {
+                //Work through removing all the levels
+                let mut removed = self.row.clone();
+                removed.remove(i);
+                let trial = Report::new(removed);
+                if trial.is_safe() {
+                    return Some(trial);
+                }
+            }
+            //If we couldn't find one, nothing is safe
+            None
+        }
     }
 }
 
-fn transform_reports(matrix: &Vec<Vec<usize>>) -> Vec<Report> {
+fn transform_reports(matrix: &[Vec<usize>]) -> Vec<Report> {
     let transformed: Vec<Report> = matrix
         .iter()
         .map(|row| {
@@ -70,19 +130,24 @@ fn transform_reports(matrix: &Vec<Vec<usize>>) -> Vec<Report> {
     transformed
 }
 
-
-fn dampener(row: &Vec<usize>) -> Result<Vec<isize>, DayError> {
-    //return only the fixed one, or none if it cannot be fixed.
-    //somehow, I need to figure out if any one problem would break things, does it fix things?
-    //find any item in the array that doesn't meet the requirements, remove it and try again
-
-    todo!()
-}
-
-fn part2(matrix: &Vec<Vec<usize>>) -> Result<usize, DayError> {
+fn part2(matrix: &[Vec<usize>]) -> Result<usize, DayError> {
     let transformed = transform_reports(matrix);
+    debug!("transformed: {:#?}", transformed);
+    //if any of the changes in levels is more than 3 it's a fail
+    let mut count: usize = 0;
+    for report in transformed.iter() {
+        //Do the transformation trying to dampen a report
+        if !report.is_safe() {
+            if let Some(dampened) = report.dampened() {
+                debug!("dampened: {:?} to {:?}", report, dampened);
+                count += 1;
+            };
+        } else {
+            count += 1;
+        }
+    }
 
-    todo!()
+    Ok(count)
 }
 
 #[cfg(test)]

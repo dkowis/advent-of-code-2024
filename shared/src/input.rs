@@ -1,5 +1,4 @@
 use crate::errors::ParseError;
-use crate::errors::ParseError::IntParse;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Error, ErrorKind};
 
