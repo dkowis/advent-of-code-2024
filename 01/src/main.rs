@@ -81,8 +81,8 @@ fn parse_input_string(input: &[String]) -> Result<(Vec<usize>, Vec<usize>), DayE
 #[cfg(test)]
 mod test {
     extern crate indoc;
-    use crate::{parse_input_string, part1, part2};
-    use pretty_assertions::{assert_eq, assert_ne};
+    use crate::{part1, part2};
+    use pretty_assertions::assert_eq;
     use shared::prelude::*;
     use std::sync::Once;
 
