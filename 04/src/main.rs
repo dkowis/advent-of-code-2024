@@ -1,6 +1,5 @@
 use crate::Direction::{E, N, NE, NW, S, SE, SW, W};
 pub use shared::prelude::*;
-use std::cmp::max;
 
 fn main() -> Result<(), DayError> {
     Logger::try_with_env_or_str("warn")?.start()?;
