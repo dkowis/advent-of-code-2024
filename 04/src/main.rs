@@ -15,14 +15,14 @@ fn main() -> Result<(), DayError> {
     let result = load_input(4, 1, parse_chars)?;
     let part1_result = part1(&result)?;
     println!("Part 1: {}", part1_result);
-    
+
     let part2_result = part2(&result)?;
     println!("Part 2: {}", part2_result);
 
     Ok(())
 }
 
-fn part1(input: &Vec<Vec<char>>) -> Result<usize, DayError> {
+fn part1(input: &[Vec<char>]) -> Result<usize, DayError> {
     //find all coordinates of X, then do the search algorithm
     let mut count = 0;
     for y in 0..input.len() {
@@ -63,7 +63,7 @@ impl Direction {
     }
 }
 
-fn find_xmas(start_coords: (i32, i32), input: &Vec<Vec<char>>) -> Result<usize, DayError> {
+fn find_xmas(start_coords: (i32, i32), input: &[Vec<char>]) -> Result<usize, DayError> {
     //look in all the directions 4 characters out, if possible.
     // 0,0 should be top left
     let mut found = 0;
@@ -82,7 +82,7 @@ fn find_xmas(start_coords: (i32, i32), input: &Vec<Vec<char>>) -> Result<usize, 
 }
 
 fn count_word_direction(
-    input: &Vec<Vec<char>>,
+    input: &[Vec<char>],
     word: &str,
     start: (i32, i32),
     direction: Direction,
@@ -121,7 +121,7 @@ fn count_word_direction(
     }
 }
 
-fn part2(input: &Vec<Vec<char>>) -> Result<usize, DayError> {
+fn part2(input: &[Vec<char>]) -> Result<usize, DayError> {
     let mut count = 0;
     for y in 0..input.len() {
         for x in 0..input[0].len() {
@@ -137,15 +137,15 @@ fn part2(input: &Vec<Vec<char>>) -> Result<usize, DayError> {
     Ok(count)
 }
 
-fn find_x_mas(start_coords: (i32, i32), input: &Vec<Vec<char>>) -> Result<bool, DayError> {
+fn find_x_mas(start_coords: (i32, i32), input: &[Vec<char>]) -> Result<bool, DayError> {
     //look in all the directions 4 characters out, if possible.
     //So now I need to find all the A's with an M and S in diagonals
-    
+
     // 0,0 should be top left
     let (x, y) = start_coords;
     if x == 0 || y == 0 || x == input.len() as i32 - 1 || y == input[0].len() as i32 - 1 {
         //there cannot be any X-MAS on any of the edges
-        return Ok(false)
+        return Ok(false);
     }
     //Find our maxes
     //surrounding the current coordinates at diagonals should be MAS or SAM
@@ -153,22 +153,25 @@ fn find_x_mas(start_coords: (i32, i32), input: &Vec<Vec<char>>) -> Result<bool, 
     let top_right = (x + 1, y - 1);
     let bottom_left = (x - 1, y + 1);
     let bottom_right = (x + 1, y + 1);
-    
+
     let top_left_char = input[top_left.1 as usize][top_left.0 as usize];
     let top_right_char = input[top_right.1 as usize][top_right.0 as usize];
     let bottom_left_char = input[bottom_left.1 as usize][bottom_left.0 as usize];
     let bottom_right_char = input[bottom_right.1 as usize][bottom_right.0 as usize];
-    
-    match (top_left_char, top_right_char, bottom_left_char, bottom_right_char) {
-        ('M','M','S','S') => Ok(true),
-        ('S','S','M','M') => Ok(true),
-        ('S','M','S','M') => Ok(true),
-        ('M','S','M','S') => Ok(true),
-        _ => Ok(false)
-    }
-    
-}
 
+    match (
+        top_left_char,
+        top_right_char,
+        bottom_left_char,
+        bottom_right_char,
+    ) {
+        ('M', 'M', 'S', 'S') => Ok(true),
+        ('S', 'S', 'M', 'M') => Ok(true),
+        ('S', 'M', 'S', 'M') => Ok(true),
+        ('M', 'S', 'M', 'S') => Ok(true),
+        _ => Ok(false),
+    }
+}
 
 #[cfg(test)]
 mod test {
@@ -190,7 +193,7 @@ mod test {
     }
 
     #[test]
-    fn day1_part_one() -> Result<(), DayError> {
+    fn day4_part_one() -> Result<(), DayError> {
         initialize();
         let input = r#"
 MMMSXXMASM
@@ -219,9 +222,9 @@ MXMXAXMASX
     }
 
     #[test]
-    fn day1_part_two() -> Result<(), DayError> {
+    fn day4_part_two() -> Result<(), DayError> {
         initialize();
-        
+
         let input = r#"
 MMMSXXMASM
 MSAMXMSMSA
@@ -234,7 +237,7 @@ SAXAMASAAA
 MAMMMXMMMM
 MXMXAXMASX
 "#
-            .trim();
+        .trim();
 
         let parsed: Vec<Vec<char>> = input
             .split("\n")
