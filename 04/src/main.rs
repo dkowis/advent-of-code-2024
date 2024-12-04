@@ -16,6 +16,9 @@ fn main() -> Result<(), DayError> {
     let result = load_input(4, 1, parse_chars)?;
     let part1_result = part1(&result)?;
     println!("Part 1: {}", part1_result);
+    
+    let part2_result = part2(&result)?;
+    println!("Part 2: {}", part2_result);
 
     Ok(())
 }
@@ -64,10 +67,6 @@ impl Direction {
 fn find_xmas(start_coords: (i32, i32), input: &Vec<Vec<char>>) -> Result<usize, DayError> {
     //look in all the directions 4 characters out, if possible.
     // 0,0 should be top left
-    let (x, y) = start_coords;
-    //Find our maxes
-    let max_x = input.len() as i32;
-    let max_y = input[0].len() as i32;
     let mut found = 0;
 
     let find_word = "XMAS";
@@ -123,14 +122,59 @@ fn count_word_direction(
     }
 }
 
-fn part2() -> Result<(), DayError> {
-    todo!();
+fn part2(input: &Vec<Vec<char>>) -> Result<usize, DayError> {
+    let mut count = 0;
+    for y in 0..input.len() {
+        for x in 0..input[0].len() {
+            if input[y][x] == 'A' {
+                let result = find_x_mas((x as i32, y as i32), input)?;
+                if result {
+                    count += 1;
+                }
+            }
+        }
+    }
+
+    Ok(count)
 }
+
+fn find_x_mas(start_coords: (i32, i32), input: &Vec<Vec<char>>) -> Result<bool, DayError> {
+    //look in all the directions 4 characters out, if possible.
+    //So now I need to find all the A's with an M and S in diagonals
+    
+    // 0,0 should be top left
+    let (x, y) = start_coords;
+    if x == 0 || y == 0 || x == input.len() as i32 - 1 || y == input[0].len() as i32 - 1 {
+        //there cannot be any X-MAS on any of the edges
+        return Ok(false)
+    }
+    //Find our maxes
+    //surrounding the current coordinates at diagonals should be MAS or SAM
+    let top_left = (x - 1, y - 1);
+    let top_right = (x + 1, y - 1);
+    let bottom_left = (x - 1, y + 1);
+    let bottom_right = (x + 1, y + 1);
+    
+    let top_left_char = input[top_left.1 as usize][top_left.0 as usize];
+    let top_right_char = input[top_right.1 as usize][top_right.0 as usize];
+    let bottom_left_char = input[bottom_left.1 as usize][bottom_left.0 as usize];
+    let bottom_right_char = input[bottom_right.1 as usize][bottom_right.0 as usize];
+    
+    match (top_left_char, top_right_char, bottom_left_char, bottom_right_char) {
+        ('M','M','S','S') => Ok(true),
+        ('S','S','M','M') => Ok(true),
+        ('S','M','S','M') => Ok(true),
+        ('M','S','M','S') => Ok(true),
+        _ => Ok(false)
+    }
+    
+}
+
 
 #[cfg(test)]
 mod test {
     extern crate indoc;
-    use crate::part1;
+    use crate::{part1, part2};
     use pretty_assertions::{assert_eq, assert_ne};
     use shared::prelude::*;
     use std::sync::Once;
@@ -178,7 +222,28 @@ MXMXAXMASX
     #[test]
     fn day1_part_two() -> Result<(), DayError> {
         initialize();
+        
+        let input = r#"
+MMMSXXMASM
+MSAMXMSMSA
+AMXSXMAAMM
+MSAMASMSMX
+XMASAMXAMM
+XXAMMXXAMA
+SMSMSASXSS
+SAXAMASAAA
+MAMMMXMMMM
+MXMXAXMASX
+"#
+            .trim();
 
+        let parsed: Vec<Vec<char>> = input
+            .split("\n")
+            .map(|x| x.trim().chars().collect())
+            .collect();
+
+        let result = part2(&parsed)?;
+        assert_eq!(result, 9);
         assert_eq!(1, 1);
         assert_ne!(1, 2);
         Ok(())
