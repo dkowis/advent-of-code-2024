@@ -33,6 +33,10 @@ pub fn parse_word(s: String) -> Result<String, Error> {
     Ok(s)
 }
 
+pub fn parse_chars(s: String) -> Result<Vec<char>, Error> {
+    Ok(s.chars().collect())
+}
+
 pub fn parse_i32(s: String) -> Result<i32, Error> {
     s.parse::<i32>()
         .map_err(|e| Error::new(ErrorKind::InvalidData, e))
