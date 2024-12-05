@@ -196,7 +196,6 @@ mod test {
     use crate::{part1, part2, Instructions};
     use pretty_assertions::{assert_eq, assert_ne};
     use shared::prelude::*;
-    use std::sync::Once;
 
     #[test]
     fn day5_part_one() -> Result<(), DayError> {

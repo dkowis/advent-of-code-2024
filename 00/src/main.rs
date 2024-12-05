@@ -3,7 +3,7 @@ pub use shared::prelude::*;
 
 fn main() -> Result<(), DayError> {
     initialize_logger(None);
-    
+
     trace!("trace");
     debug!("debug!");
     info!("info!");
@@ -34,7 +34,6 @@ mod test {
     extern crate indoc;
     use pretty_assertions::{assert_eq, assert_ne};
     use shared::prelude::*;
-
 
     #[test]
     fn day1_part_one() -> Result<(), DayError> {
