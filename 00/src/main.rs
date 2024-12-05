@@ -13,19 +13,19 @@ fn main() -> Result<(), DayError> {
     println!("Test some input parsing lol");
 
     let result = load_input(0, 1, parse_word)?;
-    let _ = time_snippet!(part1()?);
+    let _ = time_snippet!(part1(&result)?);
 
-    let result2 = load_input(0, 2, parse_i32)?;
-    let _ = time_snippet!(part2()?);
+    let result2 = load_input(0, 2, parse_word)?;
+    let _ = time_snippet!(part2(&result2)?);
 
     Ok(())
 }
 
-fn part1() -> Result<(), DayError> {
+fn part1(_input: &[String]) -> Result<usize, DayError> {
     todo!();
 }
 
-fn part2() -> Result<(), DayError> {
+fn part2(_input: &[String]) -> Result<usize, DayError> {
     todo!();
 }
 

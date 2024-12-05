@@ -1,8 +1,8 @@
-pub use shared::prelude::{Level as TracingLevel, *};
+pub use shared::prelude::*;
 use std::fmt::Debug;
 
 fn main() -> Result<(), DayError> {
-    initialize_logger(Some(TracingLevel::WARN));
+    initialize_logger(Some(Level::WARN));
 
     trace!("trace");
     debug!("debug!");
@@ -39,15 +39,15 @@ fn part1(matrix: &[Vec<usize>]) -> Result<usize, DayError> {
 #[derive(Debug)]
 struct Report {
     row: Vec<usize>,
-    levels: Vec<Level>,
+    levels: Vec<ReactorLevel>,
 }
 
-struct Level {
+struct ReactorLevel {
     start: usize,
     end: usize,
     diff: isize,
 }
-impl Debug for Level {
+impl Debug for ReactorLevel {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             f,
@@ -60,10 +60,10 @@ impl Debug for Level {
         )
     }
 }
-impl Level {
-    fn new(start: usize, end: usize) -> Level {
+impl ReactorLevel {
+    fn new(start: usize, end: usize) -> ReactorLevel {
         let diff = start as isize - end as isize;
-        Level { start, end, diff }
+        ReactorLevel { start, end, diff }
     }
 
     fn is_safe(&self) -> bool {
@@ -81,11 +81,11 @@ impl Level {
 }
 
 impl Report {
-    fn transform_report(row: &[usize]) -> Vec<Level> {
-        let mut result_vec: Vec<Level> = Vec::with_capacity(row.len() - 1);
+    fn transform_report(row: &[usize]) -> Vec<ReactorLevel> {
+        let mut result_vec: Vec<ReactorLevel> = Vec::with_capacity(row.len() - 1);
         debug!("result_vec: {:#?}", result_vec);
         for i in 0..row.len() - 1 {
-            result_vec.push(Level::new(row[i], row[i + 1]));
+            result_vec.push(ReactorLevel::new(row[i], row[i + 1]));
         }
         result_vec
     }
