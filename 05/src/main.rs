@@ -1,6 +1,5 @@
 use code_timing_macros::time_snippet;
 pub use shared::prelude::*;
-use std::ops::Index;
 
 fn main() -> Result<(), DayError> {
     Logger::try_with_env_or_str("warn")?.start()?;
