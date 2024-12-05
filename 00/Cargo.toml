@@ -7,9 +7,8 @@ edition = "2021"
 [dependencies]
 shared = { path = "../shared" }
 thiserror = "2.0.3"
-log = "0.4.22"
-flexi_logger = "0.29.6"
 indoc = "2.0.5"
+code-timing-macros = {  version = "0.0.5", features = ["release"] }
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"

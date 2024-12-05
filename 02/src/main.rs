@@ -1,8 +1,8 @@
-pub use shared::prelude::*;
+pub use shared::prelude::{Level as TracingLevel, *};
 use std::fmt::Debug;
 
 fn main() -> Result<(), DayError> {
-    Logger::try_with_env_or_str("warn")?.start()?;
+    initialize_logger(Some(TracingLevel::WARN));
 
     trace!("trace");
     debug!("debug!");
@@ -158,20 +158,10 @@ mod test {
     use shared::prelude::*;
     use std::sync::Once;
 
-    static INIT: Once = Once::new();
-
-    fn initialize() {
-        INIT.call_once(|| {
-            Logger::try_with_env_or_str("debug")
-                .unwrap()
-                .start()
-                .unwrap();
-        });
-    }
 
     #[test]
     fn day2_part_one() -> Result<(), DayError> {
-        initialize();
+        initialize_logger(None);
 
         let input_string = r#"
 7 6 4 2 1
@@ -197,7 +187,7 @@ mod test {
 
     #[test]
     fn day2_part_two() -> Result<(), DayError> {
-        initialize();
+        initialize_logger(None);
 
         let input_string = r#"
 7 6 4 2 1

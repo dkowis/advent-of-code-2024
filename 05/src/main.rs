@@ -2,7 +2,7 @@ use code_timing_macros::time_snippet;
 pub use shared::prelude::*;
 
 fn main() -> Result<(), DayError> {
-    Logger::try_with_env_or_str("warn")?.start()?;
+    initialize_logger(Some(Level::WARN));
 
     trace!("trace");
     debug!("debug!");
@@ -198,20 +198,9 @@ mod test {
     use shared::prelude::*;
     use std::sync::Once;
 
-    static INIT: Once = Once::new();
-
-    fn initialize() {
-        INIT.call_once(|| {
-            Logger::try_with_env_or_str("debug")
-                .unwrap()
-                .start()
-                .unwrap();
-        });
-    }
-
     #[test]
     fn day5_part_one() -> Result<(), DayError> {
-        initialize();
+        initialize_logger(None);
         let input = r#"
 47|53
 97|13
@@ -258,7 +247,7 @@ mod test {
 
     #[test]
     fn day5_part_two() -> Result<(), DayError> {
-        initialize();
+        initialize_logger(None);
 
         let input = r#"
 47|53

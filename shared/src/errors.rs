@@ -1,4 +1,3 @@
-use flexi_logger::FlexiLoggerError;
 use std::num::ParseIntError;
 use thiserror::Error;
 
@@ -6,8 +5,6 @@ use thiserror::Error;
 pub enum DayError {
     #[error("Couldn't parse input")]
     IoProblem(#[from] std::io::Error),
-    #[error("Unable to start logger")]
-    FlexiLoggerProblem(#[from] FlexiLoggerError),
     #[error("Input Parsing problem!")]
     ParsingError(#[from] ParseError),
 }

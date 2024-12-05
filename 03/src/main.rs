@@ -4,7 +4,7 @@ use regex::Regex;
 pub use shared::prelude::*;
 
 fn main() -> Result<(), DayError> {
-    Logger::try_with_env_or_str("warn")?.start()?;
+    initialize_logger(Some(Level::WARN));
 
     trace!("trace");
     debug!("debug!");
@@ -122,20 +122,9 @@ mod test {
     use shared::prelude::*;
     use std::sync::Once;
 
-    static INIT: Once = Once::new();
-
-    fn initialize() {
-        INIT.call_once(|| {
-            Logger::try_with_env_or_str("debug")
-                .unwrap()
-                .start()
-                .unwrap();
-        });
-    }
-
     #[test]
     fn day3_part_one() -> Result<(), DayError> {
-        initialize();
+        initialize_logger(None);
         let input = "xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))";
         let vec = vec![input.to_string()];
 
@@ -147,7 +136,7 @@ mod test {
 
     #[test]
     fn day3_part_two() -> Result<(), DayError> {
-        initialize();
+        initialize_logger(None);
         let input = "xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))";
         let vec = vec![input.to_string()];
 
