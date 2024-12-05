@@ -45,24 +45,22 @@ impl Instructions {
         let mut updates = Vec::new();
         let mut rules_processing = true;
         for line in input {
-            if line == "" {
+            if line.is_empty() {
                 rules_processing = false;
+            } else if rules_processing {
+                let parts = line.split("|").collect::<Vec<_>>();
+                let before = parts[0].split(",").collect::<Vec<_>>();
+                let after = parts[1].split(",").collect::<Vec<_>>();
+                rules.push(Rule {
+                    before: before[0].parse().unwrap(),
+                    after: after[0].parse().unwrap(),
+                });
             } else {
-                if rules_processing {
-                    let parts = line.split("|").collect::<Vec<_>>();
-                    let before = parts[0].split(",").collect::<Vec<_>>();
-                    let after = parts[1].split(",").collect::<Vec<_>>();
-                    rules.push(Rule {
-                        before: before[0].parse().unwrap(),
-                        after: after[0].parse().unwrap(),
-                    });
-                } else {
-                    let order = line
-                        .split(",")
-                        .map(|x| x.parse().unwrap())
-                        .collect::<Vec<usize>>();
-                    updates.push(Update { order });
-                }
+                let order = line
+                    .split(",")
+                    .map(|x| x.parse().unwrap())
+                    .collect::<Vec<usize>>();
+                updates.push(Update { order });
             }
         }
 
