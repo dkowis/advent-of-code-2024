@@ -9,6 +9,7 @@ shared = { path = "../shared" }
 thiserror = "2.0.3"
 indoc = "2.0.5"
 code-timing-macros = {  version = "0.0.5", features = ["release"] }
+itertools = "0.13"
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"

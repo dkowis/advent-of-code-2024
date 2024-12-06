@@ -1,4 +1,5 @@
 use code_timing_macros::time_snippet;
+use itertools::Itertools;
 pub use shared::prelude::*;
 use std::collections::HashSet;
 use std::fmt::Formatter;
@@ -18,13 +19,17 @@ fn main() -> Result<(), DayError> {
     let part1_result = time_snippet!(part1(&result)?);
     println!("Part 1: {}", part1_result);
 
-    // let result2 = load_input(0, 2, parse_word)?;
-    // let _ = time_snippet!(part2(&result2)?);
+    let part2_result = time_snippet!(part2(&result)?);
+
+    println!("Part 2: {}", part2_result);
+    //477 is too low
+    //1326 is also still too low.
+    //2262 is too high!
 
     Ok(())
 }
 
-#[derive(PartialEq, Debug, Eq, Hash, Copy, Clone)]
+#[derive(PartialEq, Debug, Eq, Hash, Copy, Clone, Ord, PartialOrd)]
 struct Coords {
     x: isize,
     y: isize,
@@ -36,13 +41,14 @@ impl Coords {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 enum Direction {
     N,
     E,
     S,
     W,
 }
+#[derive(Copy, Clone)]
 struct Guard {
     location: Coords,
     facing: Direction,
@@ -75,7 +81,8 @@ impl Guard {
 
 struct World {
     visited: HashSet<Coords>,
-    crossed_count: usize,
+    turn_location: HashSet<Coords>,
+    loop_locations: usize,
     map: Vec<char>,
     height: usize,
     width: usize,
@@ -112,13 +119,17 @@ impl World {
             height: max_y,
             width: max_x,
             guard,
-            crossed_count: 0,
+            turn_location: HashSet::new(),
+            loop_locations: 0,
         }
     }
     fn static_index_of(width: usize, coords: &Coords) -> usize {
         let result = coords.y * width as isize + coords.x;
         if result.is_negative() {
-            panic!("Cannot index in the negatives!")
+            panic!(
+                "Cannot index in the negatives! ({}, {})",
+                coords.x, coords.y
+            );
         }
         result as usize
     }
@@ -143,6 +154,92 @@ impl World {
         self.map[self.index_of(&coords)]
     }
 
+    fn check_future(&self) -> bool {
+        let mut hypothetical = self.guard.clone();
+        //If hypothetical guard turned now, return the next turn
+        hypothetical.turn();
+
+        let mut turns = Vec::new();
+        turns.push(hypothetical.location);
+
+        //Travel into the future a ways and see if we make loops
+        loop {
+            // Peek forward first to see if the guard is going to need to turn instead
+            //debug!("HYPOTHETICAL: ({:?})", hypothetical.location);
+            let peeking = hypothetical.peek_forward();
+            //If the guard is peeking off the map, there's no turn
+            if peeking.x < 0
+                || peeking.x > self.width as isize
+                || peeking.y < 0
+                || peeking.y > self.height as isize
+            {
+                return false;
+            } else {
+                let peek_index = self.index_of(&hypothetical.peek_forward());
+                if peek_index >= self.map.len() {
+                    //Walk off the end of the map, no coords
+                    return false;
+                } else {
+                    if self.map[peek_index] == '#' {
+                        //gotta turn bro! and looping again is smort
+                        hypothetical.turn();
+                        //Detect a loop, commit it and leave.
+                        if turns.contains(&hypothetical.location) {
+                            return true;
+                        } else {
+                            //Keep goin!
+                            turns.push(hypothetical.location);
+                        }
+                    } else {
+                        hypothetical.move_forward();
+                    }
+                }
+            }
+        }
+    }
+
+    fn check_for_future_loops(&self) -> Option<Vec<Coords>> {
+        let mut hypothetical = self.guard.clone();
+        //If hypothetical guard turned now, return the next turn
+        hypothetical.turn();
+
+        let mut turns = Vec::new();
+        turns.push(hypothetical.location);
+
+        //Travel into the future a ways and see if we make loops
+        loop {
+            // Peek forward first to see if the guard is going to need to turn instead
+            //debug!("HYPOTHETICAL: ({:?})", hypothetical.location);
+            let peeking = hypothetical.peek_forward();
+            //If the guard is peeking off the map, there's no turn
+            if peeking.x < 0 || peeking.x > self.width as isize {
+                return None;
+            }
+            if peeking.y < 0 || peeking.y > self.height as isize {
+                return None;
+            }
+            let peek_index = self.index_of(&hypothetical.peek_forward());
+            if peek_index >= self.map.len() {
+                //Walk off the end of the map, no coords
+                return None;
+            } else {
+                if self.map[peek_index] == '#' {
+                    //gotta turn bro! and looping again is smort
+                    hypothetical.turn();
+                    //Detect a loop, commit it and leave.
+                    if turns.contains(&hypothetical.location) {
+                        turns.push(hypothetical.location);
+                        return Some(turns);
+                    } else {
+                        turns.push(hypothetical.location);
+                    }
+                } else {
+                    hypothetical.move_forward();
+                }
+            }
+        }
+    }
+
     fn patrol(&mut self) {
         //Have the guard walk straight, and record all the coords they travel
         //When the guard would run into something, they turn and walk instead.
@@ -158,10 +255,6 @@ impl World {
                 && self.guard.location.y >= 0
                 && self.guard.location.y < self.height as isize)
             {
-                //Any time I go to insert this, where I've already crossed should be a spot a loop can happen
-                if self.visited.contains(&self.guard.location) {
-                    self.crossed_count += 1;
-                }
                 self.visited.insert(self.guard.location.clone());
             }
 
@@ -173,8 +266,23 @@ impl World {
                 if self.map[peek_index] == '#' {
                     //gotta turn bro! and looping again is smort
                     self.guard.turn();
+                    //record this turn location
+                    self.turn_location.insert(self.guard.location.clone());
                 } else {
                     self.guard.move_forward();
+                    //Every time we step forward, we need to check for LÖÖPS brøether
+                    if let Some(turns) = self.check_for_future_loops() {
+                        //For any of the next possible few turns, if any one of those turns is in our already turns list, it's a LÖÖP
+                        debug!("LOOP DETECTION ON {:?}", turns);
+                        let dupes = turns.iter().duplicates().collect_vec();
+                        debug!("LOOP DOOPS: {:?}", dupes);
+                        if turns.iter().any(|x| self.turn_location.contains(x)) || !dupes.is_empty()
+                        //or if there's any duplicates in here.
+                        {
+                            self.loop_locations += 1;
+                            debug!("LÖÖP brøether: {:?}", turns);
+                        }
+                    }
                 }
             }
             //If the guard has moved off the map, we're not patrolling any more
@@ -227,12 +335,12 @@ impl std::fmt::Display for World {
         // Display guard's location and facing
         writeln!(
             f,
-            "Guard is at ({}, {}) facing {:?}. Unique Visits: {}, Crossed: {}",
+            "Guard is at ({}, {}) facing {:?}. Unique Visits: {}, LoopLocations: {}",
             self.guard.location.x,
             self.guard.location.y,
             self.guard.facing,
             self.visited.len(),
-            self.crossed_count
+            self.loop_locations
         )
     }
 }
@@ -247,7 +355,7 @@ fn part1(input: &[String]) -> Result<usize, DayError> {
 fn part2(input: &[String]) -> Result<usize, DayError> {
     let mut world = World::new(input);
     world.patrol();
-    let result = world.crossed_count;
+    let result = world.loop_locations;
     Ok(result)
 }
 
@@ -359,11 +467,37 @@ mod test {
 #.........
 ......#...
 "#
-            .trim();
+        .trim();
 
         let parsed = input.split("\n").map(|x| x.to_string()).collect::<Vec<_>>();
         let result = part2(&parsed)?;
 
-        assert_eq!(result, 6);        Ok(())
+        assert_eq!(result, 6);
+        Ok(())
+    }
+
+    #[test]
+    fn day6_part_two_new_loop() -> Result<(), DayError> {
+        initialize_logger(None);
+
+        let input = r#"
+.#..#.....
+...#.....#
+#.........
+..#.......
+.......#..
+..........
+.#..^.....
+........#.
+#.........
+......#...
+"#
+        .trim();
+
+        let parsed = input.split("\n").map(|x| x.to_string()).collect::<Vec<_>>();
+        let result = part2(&parsed)?;
+
+        assert_eq!(result, 7);
+        Ok(())
     }
 }
