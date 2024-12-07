@@ -151,6 +151,10 @@ impl World {
         Self::static_index_to_coords(self.width, index)
     }
 
+    fn char_at(&self, coords: Coords) -> char {
+        self.map[self.index_of(&coords)]
+    }
+
     fn check_for_future_loops(&self) -> Option<Vec<Guard>> {
         let mut hypothetical = self.guard.clone();
 
