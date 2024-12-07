@@ -155,7 +155,7 @@ impl World {
     }
 
     fn check_for_future_loops(&self) -> Option<Vec<Guard>> {
-        let mut hypothetical = self.guard.clone();
+        let mut hypothetical = self.guard;
 
         //If hypothetical guard turned now, return the next turn
         //Have to clone the map, and put my thingy in there.
@@ -192,11 +192,11 @@ impl World {
                     hypothetical.turn();
                     //If I'm making a turn here that I've made before, it's a loop, and I need to leave
                     if turns.contains(&hypothetical) {
-                        turns.push(hypothetical.clone());
+                        turns.push(hypothetical);
                         return Some(turns);
                     } else {
                         //Otherwise, turn and keep going
-                        turns.push(hypothetical.clone());
+                        turns.push(hypothetical);
                         debug!("TURNS: {:?}", turns);
                     }
                 } else {
@@ -222,7 +222,7 @@ impl World {
                 && self.guard.location.y >= 0
                 && self.guard.location.y < self.height as isize
             {
-                self.visited.insert(self.guard.location.clone());
+                self.visited.insert(self.guard.location);
             }
 
             // Peek forward first to see if the guard is going to need to turn instead
@@ -234,7 +234,7 @@ impl World {
                     //gotta turn bro! and looping again is smort
                     self.guard.turn();
                     //record this turn location
-                    self.turn_location.insert(self.guard.clone());
+                    self.turn_location.insert(self.guard);
                 } else {
                     self.guard.move_forward();
                     //Every time we step forward, we need to check for LÖÖPS brøether
