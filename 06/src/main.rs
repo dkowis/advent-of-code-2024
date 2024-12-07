@@ -24,6 +24,7 @@ fn main() -> Result<(), DayError> {
     println!("Part 2: {}", part2_result);
     //477 is too low
     //1326 is also still too low.
+    //2151 is not the right answer
     //2262 is too high!
 
     Ok(())
@@ -41,14 +42,14 @@ impl Coords {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 enum Direction {
     N,
     E,
     S,
     W,
 }
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 struct Guard {
     location: Coords,
     facing: Direction,
@@ -81,7 +82,7 @@ impl Guard {
 
 struct World {
     visited: HashSet<Coords>,
-    turn_location: HashSet<Coords>,
+    turn_location: HashSet<Guard>, //every location the guard turns
     loop_locations: usize,
     map: Vec<char>,
     height: usize,
@@ -198,42 +199,53 @@ impl World {
         }
     }
 
-    fn check_for_future_loops(&self) -> Option<Vec<Coords>> {
+    fn check_for_future_loops(&self) -> Option<Vec<Guard>> {
         let mut hypothetical = self.guard.clone();
+
         //If hypothetical guard turned now, return the next turn
-        hypothetical.turn();
+        //Have to clone the map, and put my thingy in there.
+        let mut hypothetical_map = self.map.clone();
+        let barricade_index = self.index_of(&hypothetical.peek_forward());
+        if barricade_index > hypothetical_map.len() {
+            //No loops if we're outside the map
+            return None;
+        }
+        hypothetical_map[barricade_index] = '#'; //Put the damn barricade in the hypothetical map _at the right spot_
 
         let mut turns = Vec::new();
-        turns.push(hypothetical.location);
 
-        //Travel into the future a ways and see if we make loops
+        //Travel into the future
         loop {
             // Peek forward first to see if the guard is going to need to turn instead
-            //debug!("HYPOTHETICAL: ({:?})", hypothetical.location);
             let peeking = hypothetical.peek_forward();
-            //If the guard is peeking off the map, there's no turn
-            if peeking.x < 0 || peeking.x > self.width as isize {
-                return None;
-            }
-            if peeking.y < 0 || peeking.y > self.height as isize {
+            //If the guard is peeking off the map, there's no loop
+            if peeking.x < 0
+                || peeking.x > self.width as isize
+                || peeking.y < 0
+                || peeking.y > self.height as isize
+            {
                 return None;
             }
             let peek_index = self.index_of(&hypothetical.peek_forward());
-            if peek_index >= self.map.len() {
+            if peek_index >= hypothetical_map.len() {
                 //Walk off the end of the map, no coords
                 return None;
             } else {
-                if self.map[peek_index] == '#' {
+                //Only need to use the hypothetical map for this looking.
+                if hypothetical_map[peek_index] == '#' {
                     //gotta turn bro! and looping again is smort
                     hypothetical.turn();
-                    //Detect a loop, commit it and leave.
-                    if turns.contains(&hypothetical.location) {
-                        turns.push(hypothetical.location);
+                    //If I'm making a turn here that I've made before, it's a loop, and I need to leave
+                    if turns.contains(&hypothetical) {
+                        turns.push(hypothetical.clone());
                         return Some(turns);
                     } else {
-                        turns.push(hypothetical.location);
+                        //Otherwise, turn and keep going
+                        turns.push(hypothetical.clone());
+                        debug!("TURNS: {:?}", turns);
                     }
                 } else {
+                    //Walkin like I don't care.
                     hypothetical.move_forward();
                 }
             }
@@ -267,21 +279,14 @@ impl World {
                     //gotta turn bro! and looping again is smort
                     self.guard.turn();
                     //record this turn location
-                    self.turn_location.insert(self.guard.location.clone());
+                    self.turn_location.insert(self.guard.clone());
                 } else {
                     self.guard.move_forward();
                     //Every time we step forward, we need to check for LÖÖPS brøether
                     if let Some(turns) = self.check_for_future_loops() {
-                        //For any of the next possible few turns, if any one of those turns is in our already turns list, it's a LÖÖP
-                        debug!("LOOP DETECTION ON {:?}", turns);
-                        let dupes = turns.iter().duplicates().collect_vec();
-                        debug!("LOOP DOOPS: {:?}", dupes);
-                        if turns.iter().any(|x| self.turn_location.contains(x)) || !dupes.is_empty()
-                        //or if there's any duplicates in here.
-                        {
-                            self.loop_locations += 1;
-                            debug!("LÖÖP brøether: {:?}", turns);
-                        }
+                        //I think if I got here, that means it's a loop.
+                        debug!("LÖÖP FOUND: {:?}", turns);
+                        self.loop_locations += 1;
                     }
                 }
             }
