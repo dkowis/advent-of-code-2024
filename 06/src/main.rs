@@ -1,5 +1,4 @@
 use code_timing_macros::time_snippet;
-use itertools::Itertools;
 pub use shared::prelude::*;
 use std::collections::HashSet;
 use std::fmt::Formatter;
