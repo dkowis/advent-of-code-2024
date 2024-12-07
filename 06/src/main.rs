@@ -151,54 +151,6 @@ impl World {
         Self::static_index_to_coords(self.width, index)
     }
 
-    fn char_at(&self, coords: Coords) -> char {
-        self.map[self.index_of(&coords)]
-    }
-
-    fn check_future(&self) -> bool {
-        let mut hypothetical = self.guard.clone();
-        //If hypothetical guard turned now, return the next turn
-        hypothetical.turn();
-
-        let mut turns = Vec::new();
-        turns.push(hypothetical.location);
-
-        //Travel into the future a ways and see if we make loops
-        loop {
-            // Peek forward first to see if the guard is going to need to turn instead
-            //debug!("HYPOTHETICAL: ({:?})", hypothetical.location);
-            let peeking = hypothetical.peek_forward();
-            //If the guard is peeking off the map, there's no turn
-            if peeking.x < 0
-                || peeking.x > self.width as isize
-                || peeking.y < 0
-                || peeking.y > self.height as isize
-            {
-                return false;
-            } else {
-                let peek_index = self.index_of(&hypothetical.peek_forward());
-                if peek_index >= self.map.len() {
-                    //Walk off the end of the map, no coords
-                    return false;
-                } else {
-                    if self.map[peek_index] == '#' {
-                        //gotta turn bro! and looping again is smort
-                        hypothetical.turn();
-                        //Detect a loop, commit it and leave.
-                        if turns.contains(&hypothetical.location) {
-                            return true;
-                        } else {
-                            //Keep goin!
-                            turns.push(hypothetical.location);
-                        }
-                    } else {
-                        hypothetical.move_forward();
-                    }
-                }
-            }
-        }
-    }
-
     fn check_for_future_loops(&self) -> Option<Vec<Guard>> {
         let mut hypothetical = self.guard.clone();
 
@@ -262,10 +214,10 @@ impl World {
             //we do include the starting position of the guard, so this is correct.
             //And the HashSet will take care of duplicates.
             //Only insert the visited location if the guard is still on the map
-            if (self.guard.location.x >= 0
+            if self.guard.location.x >= 0
                 && self.guard.location.x < self.width as isize
                 && self.guard.location.y >= 0
-                && self.guard.location.y < self.height as isize)
+                && self.guard.location.y < self.height as isize
             {
                 self.visited.insert(self.guard.location.clone());
             }
@@ -368,7 +320,7 @@ fn part2(input: &[String]) -> Result<usize, DayError> {
 mod test {
     extern crate indoc;
     use crate::{part1, part2, Coords, World};
-    use pretty_assertions::{assert_eq, assert_ne};
+    use pretty_assertions::assert_eq;
     use shared::prelude::*;
 
     #[test]
@@ -389,7 +341,7 @@ mod test {
         .trim();
 
         let parsed = input.split("\n").map(|x| x.to_string()).collect::<Vec<_>>();
-        let mut world = World::new(&parsed);
+        let world = World::new(&parsed);
         let coords0 = world.index_to_coords(0);
         assert_eq!(coords0, Coords::new(0, 0));
         let coords1 = world.index_to_coords(1);
