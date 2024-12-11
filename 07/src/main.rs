@@ -2,7 +2,7 @@ use std::fmt::Formatter;
 use code_timing_macros::time_snippet;
 use itertools::{repeat_n, Itertools};
 pub use shared::prelude::*;
-use crate::Operator::{MULT, PLUS};
+use crate::Operator::{CONCAT, MULT, PLUS};
 
 fn main() -> Result<(), DayError> {
     initialize_logger(Some(Level::WARN));
@@ -20,8 +20,8 @@ fn main() -> Result<(), DayError> {
 
     println!("Part 1: {}", part1_result);
     
-    // let result2 = load_input(0, 2, parse_word)?;
-    // let _ = time_snippet!(part2(&result2)?);
+    let part2_result = time_snippet!(part2(&result)?);
+    println!("Part 2: {}", part2_result);
 
     Ok(())
 }
@@ -37,14 +37,22 @@ fn part1(input: &[String]) -> Result<usize, DayError> {
     Ok(total)
 }
 
-fn part2(_input: &[String]) -> Result<usize, DayError> {
-    todo!();
+fn part2(input: &[String]) -> Result<usize, DayError> {
+    let result = input.iter()
+        .map(|x| Problem::new(x))
+        .filter(|x| x.is_solved_part2())
+        .collect::<Vec<Problem>>();
+
+    debug!("SOLVED PROBLEMS: {:?}", result);
+    let total: usize = result.iter().map(|x| x.test_value).sum::<usize>();
+    Ok(total)
 }
 
 #[derive(Copy, Clone)]
 enum Operator {
     PLUS,
     MULT,
+    CONCAT,
 }
 
 impl std::fmt::Debug for Operator {
@@ -52,6 +60,7 @@ impl std::fmt::Debug for Operator {
         match self {
             PLUS => write!(f, "+"),
             MULT => write!(f, "*"),
+            CONCAT => write!(f, "||"),
         }
     }
 }
@@ -92,6 +101,12 @@ impl Problem {
                     let new_acc = match ops[0] {
                         PLUS => { first + second}
                         MULT => { first * second }
+                        Operator::CONCAT => {
+                            let mut result = String::new();
+                            result.push_str(&first.to_string());
+                            result.push_str(&second.to_string());
+                            result.parse::<usize>().unwrap()
+                        }
                     };
                     do_math_inner(new_numbers, new_ops, new_acc)
                 } else {
@@ -102,6 +117,12 @@ impl Problem {
                     let new_acc = match op {
                         PLUS => { acc + numbers[0] }
                         MULT => { acc * numbers[0] }
+                        Operator::CONCAT => {
+                            let mut result = String::new();
+                            result.push_str(&acc.to_string());
+                            result.push_str(&numbers[0].to_string());
+                            result.parse::<usize>().unwrap()
+                        }
                     };
                     do_math_inner(new_numbers, new_ops, new_acc)
                 }
@@ -129,6 +150,26 @@ impl Problem {
             }
         }
         false
+    }
+
+    fn is_solved_part2(&self) -> bool {
+        let ops = vec![PLUS, MULT, CONCAT];
+        let group_size = self.numbers.len()-1;
+        let combinations = repeat_n(ops.iter(), group_size).multi_cartesian_product().collect_vec();
+
+        debug!("Solving for {:?}. {} {:?} combinations", self,group_size, combinations);
+        for ops in &combinations {
+            debug!("Operations: {:?}", ops);
+            debug!("   numbers: {:?}", self.numbers);
+            let nums = self.numbers.clone();
+            let result = Self::do_math(&nums, ops);
+            debug!("Test Value: {} Result: {}", self.test_value, result);
+            if result == self.test_value {
+                return true;
+            }
+        }
+        false
+
     }
 }
 
