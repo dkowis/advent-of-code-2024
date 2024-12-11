@@ -229,22 +229,21 @@ impl World {
             let peek_index = self.index_of(&self.guard.peek_forward());
             if peek_index >= self.map.len() {
                 patrolling = false; //we'd walk off the map!
+            } else if self.map[peek_index] == '#' {
+                //gotta turn bro! and looping again is smort
+                self.guard.turn();
+                //record this turn location
+                self.turn_location.insert(self.guard);
             } else {
-                if self.map[peek_index] == '#' {
-                    //gotta turn bro! and looping again is smort
-                    self.guard.turn();
-                    //record this turn location
-                    self.turn_location.insert(self.guard);
-                } else {
-                    self.guard.move_forward();
-                    //Every time we step forward, we need to check for LÖÖPS brøether
-                    if let Some(turns) = self.check_for_future_loops() {
-                        //I think if I got here, that means it's a loop.
-                        debug!("LÖÖP FOUND: {:?}", turns);
-                        self.loop_locations += 1;
-                    }
+                self.guard.move_forward();
+                //Every time we step forward, we need to check for LÖÖPS brøether
+                if let Some(turns) = self.check_for_future_loops() {
+                    //I think if I got here, that means it's a loop.
+                    debug!("LÖÖP FOUND: {:?}", turns);
+                    self.loop_locations += 1;
                 }
             }
+
             //If the guard has moved off the map, we're not patrolling any more
             if self.guard.location.x < 0 || self.guard.location.x > self.width as isize {
                 patrolling = false;

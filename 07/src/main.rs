@@ -1,4 +1,4 @@
-use crate::Operator::{CONCAT, MULT, PLUS};
+use crate::Operator::{Concat, Mult, Plus};
 use code_timing_macros::time_snippet;
 use itertools::{repeat_n, Itertools};
 pub use shared::prelude::*;
@@ -52,17 +52,17 @@ fn part2(input: &[String]) -> Result<usize, DayError> {
 
 #[derive(Copy, Clone)]
 enum Operator {
-    PLUS,
-    MULT,
-    CONCAT,
+    Plus,
+    Mult,
+    Concat,
 }
 
 impl std::fmt::Debug for Operator {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            PLUS => write!(f, "+"),
-            MULT => write!(f, "*"),
-            CONCAT => write!(f, "||"),
+            Plus => write!(f, "+"),
+            Mult => write!(f, "*"),
+            Concat => write!(f, "||"),
         }
     }
 }
@@ -102,50 +102,47 @@ impl Problem {
         fn do_math_inner(numbers: &[usize], ops: &[&Operator], acc: usize) -> usize {
             if numbers.is_empty() {
                 return acc;
+            } else if acc == 0 {
+                //take the first two numbers off, and do the first ops
+                let first = numbers[0];
+                let second = numbers[1];
+                let new_numbers = &numbers[2..];
+                let new_ops = &ops[1..];
+                let new_acc = match ops[0] {
+                    Plus => first + second,
+                    Mult => first * second,
+                    Operator::Concat => {
+                        let mut result = String::new();
+                        result.push_str(&first.to_string());
+                        result.push_str(&second.to_string());
+                        result.parse::<usize>().unwrap()
+                    }
+                };
+                do_math_inner(new_numbers, new_ops, new_acc)
             } else {
-                if acc == 0 {
-                    //take the first two numbers off, and do the first ops
-                    let first = numbers[0];
-                    let second = numbers[1];
-                    let new_numbers = &numbers[2..];
-                    let new_ops = &ops[1..];
-                    let new_acc = match ops[0] {
-                        PLUS => first + second,
-                        MULT => first * second,
-                        Operator::CONCAT => {
-                            let mut result = String::new();
-                            result.push_str(&first.to_string());
-                            result.push_str(&second.to_string());
-                            result.parse::<usize>().unwrap()
-                        }
-                    };
-                    do_math_inner(new_numbers, new_ops, new_acc)
-                } else {
-                    //take the acc and one number and do the first ops
-                    let op = ops[0];
-                    let new_numbers = &numbers[1..];
-                    let new_ops = &ops[1..];
-                    let new_acc = match op {
-                        PLUS => acc + numbers[0],
-                        MULT => acc * numbers[0],
-                        Operator::CONCAT => {
-                            let mut result = String::new();
-                            result.push_str(&acc.to_string());
-                            result.push_str(&numbers[0].to_string());
-                            result.parse::<usize>().unwrap()
-                        }
-                    };
-                    do_math_inner(new_numbers, new_ops, new_acc)
-                }
+                //take the acc and one number and do the first ops
+                let op = ops[0];
+                let new_numbers = &numbers[1..];
+                let new_ops = &ops[1..];
+                let new_acc = match op {
+                    Plus => acc + numbers[0],
+                    Mult => acc * numbers[0],
+                    Operator::Concat => {
+                        let mut result = String::new();
+                        result.push_str(&acc.to_string());
+                        result.push_str(&numbers[0].to_string());
+                        result.parse::<usize>().unwrap()
+                    }
+                };
+                do_math_inner(new_numbers, new_ops, new_acc)
             }
         }
-        let result = do_math_inner(numbers, ops, 0);
 
-        result
+        do_math_inner(numbers, ops, 0)
     }
 
     fn is_solved(&self) -> bool {
-        let ops = vec![PLUS, MULT];
+        let ops = [Plus, Mult];
         let group_size = self.numbers.len() - 1;
         let combinations = repeat_n(ops.iter(), group_size)
             .multi_cartesian_product()
@@ -169,7 +166,7 @@ impl Problem {
     }
 
     fn is_solved_part2(&self) -> bool {
-        let ops = vec![PLUS, MULT, CONCAT];
+        let ops = [Plus, Mult, Concat];
         let group_size = self.numbers.len() - 1;
         let combinations = repeat_n(ops.iter(), group_size)
             .multi_cartesian_product()
