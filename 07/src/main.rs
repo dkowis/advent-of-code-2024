@@ -1,8 +1,8 @@
-use std::fmt::Formatter;
+use crate::Operator::{CONCAT, MULT, PLUS};
 use code_timing_macros::time_snippet;
 use itertools::{repeat_n, Itertools};
 pub use shared::prelude::*;
-use crate::Operator::{CONCAT, MULT, PLUS};
+use std::fmt::Formatter;
 
 fn main() -> Result<(), DayError> {
     initialize_logger(Some(Level::WARN));
@@ -19,7 +19,7 @@ fn main() -> Result<(), DayError> {
     let part1_result = time_snippet!(part1(&result)?);
 
     println!("Part 1: {}", part1_result);
-    
+
     let part2_result = time_snippet!(part2(&result)?);
     println!("Part 2: {}", part2_result);
 
@@ -27,7 +27,8 @@ fn main() -> Result<(), DayError> {
 }
 
 fn part1(input: &[String]) -> Result<usize, DayError> {
-    let result = input.iter()
+    let result = input
+        .iter()
         .map(|x| Problem::new(x))
         .filter(|x| x.is_solved())
         .collect::<Vec<Problem>>();
@@ -38,7 +39,8 @@ fn part1(input: &[String]) -> Result<usize, DayError> {
 }
 
 fn part2(input: &[String]) -> Result<usize, DayError> {
-    let result = input.iter()
+    let result = input
+        .iter()
         .map(|x| Problem::new(x))
         .filter(|x| x.is_solved_part2())
         .collect::<Vec<Problem>>();
@@ -72,14 +74,23 @@ struct Problem {
 
 impl std::fmt::Debug for Problem {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Problem {{ test_value: {}, numbers: {:?} }}", self.test_value, self.numbers)
+        write!(
+            f,
+            "Problem {{ test_value: {}, numbers: {:?} }}",
+            self.test_value, self.numbers
+        )
     }
 }
 impl Problem {
     fn new(line: &str) -> Self {
         let mut parts = line.split(": ");
         let test_value = parts.next().unwrap().parse::<usize>().unwrap();
-        let numbers = parts.next().unwrap().split(" ").map(|x| x.parse::<usize>().unwrap()).collect();
+        let numbers = parts
+            .next()
+            .unwrap()
+            .split(" ")
+            .map(|x| x.parse::<usize>().unwrap())
+            .collect();
         Self {
             test_value,
             numbers,
@@ -99,8 +110,8 @@ impl Problem {
                     let new_numbers = &numbers[2..];
                     let new_ops = &ops[1..];
                     let new_acc = match ops[0] {
-                        PLUS => { first + second}
-                        MULT => { first * second }
+                        PLUS => first + second,
+                        MULT => first * second,
                         Operator::CONCAT => {
                             let mut result = String::new();
                             result.push_str(&first.to_string());
@@ -115,8 +126,8 @@ impl Problem {
                     let new_numbers = &numbers[1..];
                     let new_ops = &ops[1..];
                     let new_acc = match op {
-                        PLUS => { acc + numbers[0] }
-                        MULT => { acc * numbers[0] }
+                        PLUS => acc + numbers[0],
+                        MULT => acc * numbers[0],
                         Operator::CONCAT => {
                             let mut result = String::new();
                             result.push_str(&acc.to_string());
@@ -135,10 +146,15 @@ impl Problem {
 
     fn is_solved(&self) -> bool {
         let ops = vec![PLUS, MULT];
-        let group_size = self.numbers.len()-1;
-        let combinations = repeat_n(ops.iter(), group_size).multi_cartesian_product().collect_vec();
+        let group_size = self.numbers.len() - 1;
+        let combinations = repeat_n(ops.iter(), group_size)
+            .multi_cartesian_product()
+            .collect_vec();
 
-        debug!("Solving for {:?}. {} {:?} combinations", self,group_size, combinations);
+        debug!(
+            "Solving for {:?}. {} {:?} combinations",
+            self, group_size, combinations
+        );
         for ops in &combinations {
             debug!("Operations: {:?}", ops);
             debug!("   numbers: {:?}", self.numbers);
@@ -154,10 +170,15 @@ impl Problem {
 
     fn is_solved_part2(&self) -> bool {
         let ops = vec![PLUS, MULT, CONCAT];
-        let group_size = self.numbers.len()-1;
-        let combinations = repeat_n(ops.iter(), group_size).multi_cartesian_product().collect_vec();
+        let group_size = self.numbers.len() - 1;
+        let combinations = repeat_n(ops.iter(), group_size)
+            .multi_cartesian_product()
+            .collect_vec();
 
-        debug!("Solving for {:?}. {} {:?} combinations", self,group_size, combinations);
+        debug!(
+            "Solving for {:?}. {} {:?} combinations",
+            self, group_size, combinations
+        );
         for ops in &combinations {
             debug!("Operations: {:?}", ops);
             debug!("   numbers: {:?}", self.numbers);
@@ -169,16 +190,15 @@ impl Problem {
             }
         }
         false
-
     }
 }
 
 #[cfg(test)]
 mod test {
     extern crate indoc;
+    use crate::part1;
     use pretty_assertions::{assert_eq, assert_ne};
     use shared::prelude::*;
-    use crate::part1;
 
     #[test]
     fn day7_part_one() -> Result<(), DayError> {
@@ -199,14 +219,16 @@ mod test {
 192: 17 8 14
 21037: 9 7 18 13
 292: 11 6 16 20
-"#.trim();
+"#
+        .trim();
 
-        let rows = input.split("\n").map(|x| x.to_string())
+        let rows = input
+            .split("\n")
+            .map(|x| x.to_string())
             .collect::<Vec<String>>();
 
         let result1 = part1(&rows)?;
         assert_eq!(result1, 3749);
-
 
         assert_eq!(1, 1);
         assert_ne!(1, 2);
