@@ -16,6 +16,11 @@ fn main() -> Result<(), DayError> {
     let part1_result = time_snippet!(part1(&result[0])?);
     println!("Part 1: {}", part1_result);
 
+    let part2_result = time_snippet!(part2(&result[0])?);
+    println!("Part 2: {}", part2_result);
+    //6374711498735 is too high
+    //6304576012713
+    //15616542775140 //well that's WAY too high
     // let result2 = load_input(0, 2, parse_word)?;
     // let _ = time_snippet!(part2(&result2)?);
 
@@ -32,6 +37,13 @@ impl Block {
     fn empty() -> Self {
         Self { id: None }
     }
+}
+
+#[derive(Copy, Clone, Debug)]
+struct Chunk {
+    start_index: usize,
+    id: Option<usize>,
+    size: usize,
 }
 
 struct DiskMap {
@@ -108,8 +120,94 @@ impl DiskMap {
         }
     }
 
-    fn chonk_defrag(&mut self) {
-        //Now we need to move contiguous files. Attempt to move it once, if it doesn't fit, don't move it
+    fn chonk_defrag2(&mut self) {
+        fn chunk_disk(disk: &[Block]) -> Vec<Chunk> {
+            let mut disk_chunks = Vec::new();
+            let mut current_chunk = Chunk {
+                start_index: 0,
+                id: disk[0].id,
+                size: 1,
+            };
+            for index in 0..disk.len() {
+                if index == disk.len() - 1 {
+                    current_chunk.size += 1;
+                    disk_chunks.push(current_chunk);
+                    break;
+                }
+                //if the current index contains a different set of data than what our current chunk is building up
+                //then we need to start a new chunk
+                if current_chunk.id != disk[index].id {
+                    //new CHUNK
+                    disk_chunks.push(current_chunk);
+                    current_chunk = Chunk {
+                        start_index: index,
+                        id: disk[index].id,
+                        size: 1,
+                    };
+                } else {
+                    //still in the current chunk
+                    current_chunk.size += 1;
+                }
+            }
+
+            disk_chunks
+        }
+        //Now I need to collect the empty chunks in order, to use them
+        //Do it once for decreasing file id number, there can only be 9 file IDs
+        //Way more than 9, I need to do this smartly
+        //Find highest Block ID, and use that
+        let largest_id_block = self.disk.iter().max_by(|a, b| a.id.cmp(&b.id)).unwrap();
+        let largest_id = largest_id_block.id.unwrap();
+        warn!("LARGEST ID: {}", largest_id);
+        for id in (0..=largest_id).rev() {
+            //Regen the disk chunk map every time...
+            let disk_chunks = chunk_disk(&self.disk);
+            //Make sure our free space indicies are updated every time
+            let empty_chunk_indices = disk_chunks
+                .iter()
+                .enumerate()
+                .filter(|(_, x)| x.id.is_none())
+                .map(|(i, _)| i)
+                .rev()
+                .collect::<BTreeSet<usize>>();
+
+            //find the chunk that is the ID
+            let file_chunk = disk_chunks
+                .iter()
+                .enumerate()
+                .find(|(_idx, chunk)| chunk.id == Some(id))
+                .unwrap();
+
+            let file_chunk_size = file_chunk.1.size;
+            let file_chunk_start_index = file_chunk.1.start_index;
+            let file_chunk_id = file_chunk.1.id;
+            let file_chunk_index = file_chunk.0;
+
+            //Find the left most free space
+            let left_most_empty_index = empty_chunk_indices.iter().find(|empty_chunk_index| {
+                let chunk = &disk_chunks[**empty_chunk_index];
+                chunk.size >= file_chunk_size && chunk.start_index < file_chunk_start_index
+            });
+
+            if let Some(empty_index) = left_most_empty_index {
+                //now I need to move all bits of that file to this left most empty index
+                let empty_chunk_start_index = disk_chunks[*empty_index].start_index;
+
+                //This does the actual disk crunching
+                debug!(
+                    "MOVING {:?} into {:?}",
+                    disk_chunks[file_chunk_index], disk_chunks[*empty_index]
+                );
+
+                //Update the actual disk, because we'll rescan it into chunks every time
+                for x in 0..file_chunk_size {
+                    self.disk[x + empty_chunk_start_index].id = file_chunk_id;
+                    self.disk[x + file_chunk_start_index].id = None;
+                }
+
+                debug!("DISK: {}", self);
+            }
+        }
     }
 
     fn checksum(&self) -> usize {
@@ -132,14 +230,21 @@ fn part1(input: &str) -> Result<usize, DayError> {
     Ok(disk.checksum())
 }
 
-fn part2(_input: &[String]) -> Result<usize, DayError> {
-    todo!();
+fn part2(input: &str) -> Result<usize, DayError> {
+    let mut disk = DiskMap::new(input);
+
+    debug!("SAMPLE: 00...111...2...333.44.5555.6666.777.888899");
+    debug!("  DISK: {}", disk);
+    disk.chonk_defrag2();
+    debug!("SAMPLE: 00992111777.44.333....5555.6666.....8888..");
+    debug!("  DISK: {}", disk);
+    Ok(disk.checksum())
 }
 
 #[cfg(test)]
 mod test {
     extern crate indoc;
-    use crate::part1;
+    use crate::{part1, part2};
     use pretty_assertions::{assert_eq, assert_ne};
     use shared::prelude::*;
 
@@ -167,6 +272,10 @@ mod test {
     #[test]
     fn day9_part_two() -> Result<(), DayError> {
         initialize_logger(None);
+        let input = "2333133121414131402";
+
+        let result = part2(input)?;
+        assert_eq!(result, 2858);
 
         assert_eq!(1, 1);
         assert_ne!(1, 2);
