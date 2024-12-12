@@ -18,7 +18,6 @@ fn main() -> Result<(), DayError> {
 
     println!("Part 1: {}", part1_result);
 
-
     Ok(())
 }
 
